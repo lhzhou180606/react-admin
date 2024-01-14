@@ -1,6 +1,8 @@
-import type { FormData } from '#/form'
-import type { PageServerResult, PaginationData } from '#/public'
-import { request } from '@/utils/request'
+import type { Key } from 'react';
+import type { DataNode } from 'antd/es/tree';
+import type { FormData } from '#/form';
+import type { PageServerResult, PaginationData, SideMenu } from '#/public';
+import { request } from '@/servers/request';
 
 enum API {
   URL = '/authority/menu'
@@ -12,9 +14,9 @@ enum API {
  */
 export function getMenuPage(data: Partial<FormData> & PaginationData) {
   return request.get<PageServerResult<FormData[]>>(
-    `${API.URL}/index`,
+    `${API.URL}/page`,
     { params: data }
-  )
+  );
 }
 
 /**
@@ -22,7 +24,7 @@ export function getMenuPage(data: Partial<FormData> & PaginationData) {
  * @param id - ID
  */
 export function getMenuById(id: string) {
-  return request.get(`${API.URL}/${id}`)
+  return request.get<FormData>(`${API.URL}/detail?id=${id}`);
 }
 
 /**
@@ -30,7 +32,7 @@ export function getMenuById(id: string) {
  * @param data - 请求数据
  */
 export function createMenu(data: FormData) {
-  return request.post(API.URL, data)
+  return request.post(API.URL, data);
 }
 
 /**
@@ -39,7 +41,7 @@ export function createMenu(data: FormData) {
  * @param data - 请求数据
  */
 export function updateMenu(id: string, data: FormData) {
-  return request.put(`${API.URL}/${id}`, data)
+  return request.put(`${API.URL}/${id}`, data);
 }
 
 /**
@@ -47,21 +49,33 @@ export function updateMenu(id: string, data: FormData) {
  * @param id - 删除id值
  */
 export function deleteMenu(id: string) {
-  return request.delete(`${API.URL}/${id}`)
+  return request.delete(`${API.URL}/${id}`);
 }
 
 /**
  * 获取权限列表
  * @param data - 搜索数据
  */
-export function getPermission(data: unknown) {
-  return request.get(`${API.URL}/tree`, { params: data })
+interface PermissionResult {
+  treeData: DataNode[];
+  defaultCheckedKeys: Key[];
+}
+export function getPermission(data: object) {
+  return request.get<PermissionResult>(`${API.URL}/tree`, { params: data });
 }
 
 /**
  * 保存权限列表
  * @param data - 权限数据
  */
-export function savePermission(data: unknown) {
-  return request.put(`${API.URL}/authorize/save`, data)
+export function savePermission(data: object) {
+  return request.put(`${API.URL}/authorize/save`, data);
+}
+
+/**
+ * 获取当前菜单数据
+ * @param data - 请求数据
+ */
+export function getMenuList() {
+  return request.get<SideMenu[]>(`/menu/list`);
 }

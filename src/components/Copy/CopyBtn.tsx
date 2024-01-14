@@ -1,7 +1,8 @@
-import type { ButtonProps } from 'antd'
-import { Button, message } from 'antd'
-import { useClipboard } from '@/hooks/useClipboard'
-import { Icon } from '@iconify/react'
+import type { ButtonProps } from 'antd';
+import { Button, message } from 'antd';
+import { Icon } from '@iconify/react';
+import { useTranslation } from 'react-i18next';
+import { useClipboard } from '@/hooks/useClipboard';
 
 interface Props extends ButtonProps {
   text: string;
@@ -9,28 +10,33 @@ interface Props extends ButtonProps {
 }
 
 function CopyBtn(props: Props) {
-  const { text, value } = props
-  const [, copyToClipboard] = useClipboard()
+  const { text, value } = props;
+  const { t } = useTranslation();
+  const [, copyToClipboard] = useClipboard();
+  const [messageApi, contextHolder] = message.useMessage();
 
   /** 点击编辑 */
   const onClick = () => {
     try {
-      copyToClipboard(value)
-      message.success({ content: '复制成功', key: 'copy' })
+      copyToClipboard(value);
+      messageApi.success({ content: t('public.copySuccessfully'), key: 'copy' });
     } catch(e) {
-      message.warning({ content: '复制失败', key: 'copy' })
+      messageApi.warning({ content: t('public.copyFailed'), key: 'copy' });
     }
-  }
+  };
 
   return (
-    <Button
-      {...props}
-      icon={<Icon icon="ant-design:copy-outlined" />}
-      onClick={onClick}
-    >
-      { text }
-    </Button>
-  )
+    <>
+      { contextHolder }
+      <Button
+        {...props}
+        icon={<Icon icon="ant-design:copy-outlined" />}
+        onClick={onClick}
+      >
+        { text }
+      </Button>
+    </>
+  );
 }
 
-export default CopyBtn
+export default CopyBtn;

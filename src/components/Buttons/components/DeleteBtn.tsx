@@ -1,8 +1,7 @@
-import type { ButtonProps } from 'antd'
-import { Button, Modal } from 'antd'
-import { ExclamationCircleOutlined } from '@ant-design/icons'
-
-const { confirm } = Modal
+import type { ButtonProps } from 'antd';
+import { Button, App } from 'antd';
+import { useTranslation } from 'react-i18next';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 interface Props extends Omit<ButtonProps, 'loading'> {
   isLoading: boolean;
@@ -10,26 +9,28 @@ interface Props extends Omit<ButtonProps, 'loading'> {
 }
 
 function DeleteBtn(props: Props) {
-  const { isLoading, handleDelete } = props
+  const { isLoading, handleDelete } = props;
+  const { t } = useTranslation();
+  const { modal } = App.useApp();
 
   // 清除自定义属性
-  const params: Partial<Props> = { ...props }
-  delete params.isLoading
-  delete params.handleDelete
+  const params: Partial<Props> = { ...props };
+  delete params.isLoading;
+  delete params.handleDelete;
 
   const showConfirm = () => {
-    confirm({
-      title: '提示',
+    modal.confirm({
+      title: t('public.kindTips'),
       icon: <ExclamationCircleOutlined />,
-      content: '确定要删除吗?',
-      okText: '确认',
+      content: t('public.confirmMessage', { name: t('public.delete') }),
+      okText: t('public.confirm'),
       okType: 'danger',
-      cancelText: '取消',
+      cancelText: t('public.cancel'),
       onOk() {
-        handleDelete()
+        handleDelete();
       },
-    })
-  }
+    });
+  };
 
   return (
     <Button
@@ -39,9 +40,9 @@ function DeleteBtn(props: Props) {
       loading={!!isLoading}
       onClick={showConfirm}
     >
-      删除
+      { t('public.delete') }
     </Button>
-  )
+  );
 }
 
-export default DeleteBtn
+export default DeleteBtn;

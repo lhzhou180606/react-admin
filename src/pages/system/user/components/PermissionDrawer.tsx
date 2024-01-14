@@ -1,7 +1,8 @@
-import type { DataNode, TreeProps } from 'antd/es/tree'
-import type { Key } from 'antd/lib/table/interface'
-import { Drawer, Tree, Button } from 'antd'
-import { useState } from 'react'
+import type { DataNode, TreeProps } from 'antd/es/tree';
+import type { Key } from 'antd/lib/table/interface';
+import { Drawer, Tree, Button } from 'antd';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   isVisible: boolean;
@@ -20,31 +21,38 @@ function PermissionDrawer(props: Props) {
     checkedKeys,
     onClose,
     onSubmit
-  } = props
-  const [treeCheckedKeys, setTreeCheckedKeys] = useState(checkedKeys)
+  } = props;
+  const { t } = useTranslation();
+  const [treeCheckedKeys, setTreeCheckedKeys] = useState(checkedKeys);
+
+  useEffect(() => {
+    setTreeCheckedKeys(props.checkedKeys);
+  }, [props.checkedKeys]);
 
   /** 提交 */
   const handleSubmit = () => {
-    onSubmit(treeCheckedKeys)
-  }
+    onSubmit(treeCheckedKeys);
+  };
 
   /** 右上角渲染 */
   const extraRender = (
-    <Button type="primary" onClick={handleSubmit}>提交</Button>
-  )
+    <Button type="primary" onClick={handleSubmit}>
+      { t('public.submit') }
+    </Button>
+  );
 
   /**
    * 处理勾选
    * @param checked - 勾选值
    */
   const handleCheck: TreeProps['onCheck'] = checked => {
-    setTreeCheckedKeys(checked as Key[])
-  }
+    setTreeCheckedKeys(checked as Key[]);
+  };
 
   return (
     <Drawer
       open={isVisible}
-      title={title || '权限配置'}
+      title={title || t('system.rightsProfile')}
       placement="right"
       extra={extraRender}
       onClose={onClose}
@@ -56,7 +64,7 @@ function PermissionDrawer(props: Props) {
         onCheck={handleCheck}
       />
     </Drawer>
-  )
+  );
 }
 
-export default PermissionDrawer
+export default PermissionDrawer;

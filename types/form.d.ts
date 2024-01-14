@@ -11,18 +11,19 @@ import type {
   CheckboxProps,
   SliderSingleProps,
   TimeRangePickerProps,
-  TransferProps
-} from "antd"
-import type { Key, ReactNode } from "react"
-import type { AllTypeData } from './public'
-import type { RangePickerProps } from 'antd/lib/date-picker'
-import type { DefaultOptionType } from 'antd/lib/select'
-import type { RuleObject } from 'antd/lib/form'
-import type { BusinessComponents } from '@/components/Business'
-import type { EditorProps } from '@/components/WangEditor'
+  TransferProps,
+  FormItemProps,
+} from "antd";
+import type { Key, ReactNode } from "react";
+import type { RangePickerProps } from 'antd/lib/date-picker';
+import type { DefaultOptionType } from 'antd/lib/select';
+import type { RuleObject } from 'antd/lib/form';
+import type { ServerResult } from "@/servers/request/types";
+import type { BusinessComponents } from '@/components/Business';
+import type { EditorProps } from '@/components/WangEditor';
 
 // 数据类型
-export type FormData = Record<string, AllTypeData>
+export type FormData = Record<string, unknown>
 
 // 基础数据组件
 type DefaultDataComponents = 'Input' |
@@ -87,7 +88,7 @@ export interface ApiResult extends Omit<DefaultOptionType, 'value'> {
   value?: string | number;
 }
 
-export type ApiFn = (params?: object) => Promise<ApiResult[]>
+export type ApiFn = (params?: object) => Promise<ServerResult<unknown>>
 
 // api参数
 interface ApiParam {
@@ -126,11 +127,12 @@ export type FormRule = RuleObject & {
 }
 
 // 表单数据
-export type FormList = {
+export interface FormList extends FormItemProps {
   name: string | string[]; // 表单域字段
   label: string; // 标签
   placeholder?: string; // 占位符
   hidden?: boolean; // 是否隐藏
+  unit?: string; // 单位
   rules?: FormRule[]; // 规则
   labelCol?: number; // label宽度
   wrapperCol?: number; // 内容宽度
