@@ -1,8 +1,7 @@
 import type { FormData } from '#/form';
 import type { AppDispatch, RootState } from '@/stores';
 import type { PagePermission, TableOptions } from '#/public';
-import type { FormFn } from '@/components/Form/BasicForm';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { searchList, tableColumns } from './model';
 import { message } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
@@ -13,31 +12,28 @@ import { checkPermission } from '@/utils/permissions';
 import { useCommonStore } from '@/hooks/useCommonStore';
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons';
 import { getArticlePage, deleteArticle } from '@/servers/content/article';
+import { INIT_PAGINATION } from '@/utils/config';
 import BasicContent from '@/components/Content/BasicContent';
 import BasicSearch from '@/components/Search/BasicSearch';
 import BasicTable from '@/components/Table/BasicTable';
 import BasicPagination from '@/components/Pagination/BasicPagination';
+import BasicCard from '@/components/Card/BasicCard';
 
 // 当前行数据
 interface RowData {
   id: string;
 }
 
-// 初始化搜索
-const initSearch = {
-  page: 1,
-  pageSize: 20
-};
-
 function Page() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
-  const searchFormRef = useRef<FormFn>(null);
   const { permissions } = useCommonStore();
+  const [isFetch, setFetch] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const [page, setPage] = useState(initSearch.page);
-  const [pageSize, setPageSize] = useState(initSearch.pageSize);
+  const [searchData, setSearchData] = useState<FormData>({});
+  const [page, setPage] = useState(INIT_PAGINATION.page);
+  const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize);
   const [total, setTotal] = useState(0);
   const [tableData, setTableData] = useState<FormData[]>([]);
   const [messageApi, contextHolder] = message.useMessage();
@@ -54,23 +50,13 @@ function Page() {
     delete: checkPermission(`${permissionPrefix}/delete`, permissions)
   };
 
-  /**
-   * 点击搜索
-   * @param values - 表单返回数据
-   */
-  const onSearch = (values: FormData) => {
-    setPage(1);
-    handleSearch({ page: 1, pageSize, ...values });
-  };
+  /** 获取表格数据 */
+  const getPage = useCallback(async () => {
+    const params = { ...searchData, page, pageSize };
 
-  /**
-   * 搜索提交
-   * @param values - 表单返回数据
-   */
-  const handleSearch = useCallback(async (values: FormData) => {
     try {
       setLoading(true);
-      const { code, data } = await getArticlePage(values);
+      const { code, data } = await getArticlePage(params);
 
       if (Number(code) === 200) {
         const { items, total } = data;
@@ -78,18 +64,33 @@ function Page() {
         setTableData(items);
       }
     } finally {
+      setFetch(false);
       setLoading(false);
     }
-  }, []);
+  }, [page, pageSize, searchData]);
+
+  useEffect(() => {
+    if (isFetch) getPage();
+  }, [getPage, isFetch]);
+
+  /**
+   * 点击搜索
+   * @param values - 表单返回数据
+   */
+  const onSearch = (values: FormData) => {
+    setPage(1);
+    setSearchData(values);
+    setFetch(true);
+  };
 
   // 首次进入自动加载接口数据
-  useEffect(() => { 
-    if (pagePermission.page && !isRefreshPage) handleSearch({ ...initSearch });
+  useEffect(() => {
+    if (pagePermission.page && !isRefreshPage) getPage();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagePermission.page]);
 
   // 如果是新增或编辑成功重新加载页面
-  useEffect(() => { 
+  useEffect(() => {
     if (isRefreshPage) {
       dispatch(setRefreshPage(false));
       getPage();
@@ -108,13 +109,6 @@ function Page() {
    */
   const onUpdate = (id: string) => {
     navigate(`/content/article/option?type=update&id=${id}`);
-  };
-
-  /** 获取表格数据 */
-  const getPage = () => {
-    const formData = searchFormRef.current?.getFieldsValue() || {};
-    const params = { ...formData, page, pageSize };
-    handleSearch(params);
   };
 
   /**
@@ -142,8 +136,7 @@ function Page() {
   const onChangePagination = (page: number, pageSize: number) => {
     setPage(page);
     setPageSize(pageSize);
-    const formData = searchFormRef.current?.getFieldsValue();
-    handleSearch({ ...formData, page, pageSize });
+    setFetch(true);
   };
 
   /**
@@ -174,22 +167,24 @@ function Page() {
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-      <>
-        { contextHolder }
+      { contextHolder }
+      <BasicCard>
         <BasicSearch
-          formRef={searchFormRef}
           list={searchList(t)}
-          data={initSearch}
+          data={searchData}
           isLoading={isLoading}
-          isCreate={pagePermission.create}
-          onCreate={onCreate}
           handleFinish={onSearch}
         />
-        
+      </BasicCard>
+
+      <BasicCard className='mt-10px'>
         <BasicTable
-          loading={isLoading}
+          isLoading={isLoading}
+          isCreate={pagePermission.create}
           columns={tableColumns(t, optionRender)}
           dataSource={tableData}
+          getPage={getPage}
+          onCreate={onCreate}
         />
 
         <BasicPagination
@@ -199,7 +194,7 @@ function Page() {
           total={total}
           onChange={onChangePagination}
         />
-      </>
+      </BasicCard>
     </BasicContent>
   );
 }

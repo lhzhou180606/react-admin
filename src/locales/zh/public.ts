@@ -3,6 +3,7 @@ export default {
   total: '总数',
   date: '日期',
   search: '搜索',
+  clear: '清除',
   create: '新增',
   edit: '编辑',
   delete: '删除',
@@ -32,6 +33,8 @@ export default {
   operate: '操作',
   submit: '提交',
   back: '返回',
+  show: '显示',
+  hide: '隐藏',
   open: '开启',
   close: '关闭',
   ok: '确定',
@@ -56,4 +59,6 @@ export default {
   validateEmail: '{{label}}不是邮箱格式！',
   validateNumber: '{{label}}不是数字格式！',
   validateRange: '{{label}}必须大于{{min}}且小于{{max}}',
+  createMethodWarning: '新增组件缺少对应方法',
+  getPageWarning: '缺少获取页面方法',
 };

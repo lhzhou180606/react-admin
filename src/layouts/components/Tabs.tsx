@@ -69,11 +69,11 @@ function LayoutTabs() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permissions]);
+  }, [permissions, menuList]);
 
   useEffect(() => {
     handleAddTab();
-  }, [handleAddTab]);
+  }, [handleAddTab, permissions, menuList]);
 
   useEffect(() => {
     dispatch(switchTabsLang(currentLanguage));
@@ -108,8 +108,8 @@ function LayoutTabs() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey, uri]);
-    
-  /** 
+
+  /**
    * 处理更改
    * @param key - 唯一值
    */
@@ -117,7 +117,7 @@ function LayoutTabs() {
     navigate(key);
   };
 
-  /** 
+  /**
    * 删除标签
    * @param targetKey - 目标key值
    */
@@ -125,7 +125,7 @@ function LayoutTabs() {
     dispatch(closeTabs(targetKey));
   };
 
-  /** 
+  /**
    * 处理编辑
    * @param targetKey - 目标key值
    * @param action - 动作
@@ -136,7 +136,7 @@ function LayoutTabs() {
     }
   };
 
-  /** 
+  /**
    * 点击重新加载
    * @param key - 点击值
    */
@@ -217,7 +217,7 @@ function LayoutTabs() {
           }}
           trigger={['contextMenu']}
         >
-          <div className='mr-3px'>
+          <div className='mr-1px'>
             { node }
           </div>
         </Dropdown>
@@ -249,7 +249,7 @@ function LayoutTabs() {
         />
         : <span></span>
       }
-      
+
       <div className='flex'>
         {
           tabOptions?.map((item, index) => (

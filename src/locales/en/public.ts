@@ -3,6 +3,7 @@ export default {
   total: 'total',
   date: 'date',
   search: 'Search',
+  clear: 'Clear',
   create: 'Create',
   edit: 'Edit',
   delete: 'Delete',
@@ -34,6 +35,8 @@ export default {
   open: 'Open',
   close: 'Close',
   back: 'Go back',
+  show: 'Show',
+  hide: 'Hide',
   ok: 'OK',
   copy: 'Copy',
   copySuccessfully: 'Copy successfully',
@@ -56,4 +59,6 @@ export default {
   validateEmail: '{{label}} is not a valid email!',
   validateNumber: '{{label}} is not a valid number!',
   validateRange: '{{label}} must be between {{min}} and {{max}}',
+  createMethodWarning: 'The new component lacks a corresponding method',
+  getPageWarning: 'Missing page acquisition method',
 };

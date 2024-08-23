@@ -1,8 +1,7 @@
 import type { FormData } from '#/form';
 import type { PagePermission } from '#/public';
 import type { AppDispatch } from '@/stores';
-import type { FormFn } from '@/components/Form/BasicForm';
-import { message, Spin } from 'antd';
+import { type FormInstance, message, Spin } from 'antd';
 import { createList } from './model';
 import { getUrlParam } from '@/utils/helper';
 import { useDispatch } from 'react-redux';
@@ -26,6 +25,7 @@ import BasicForm from '@/components/Form/BasicForm';
 import BasicContent from '@/components/Content/BasicContent';
 import SubmitBottom from '@/components/Bottom/SubmitBottom';
 import { useSingleTab } from '@/hooks/useSingleTab';
+import BasicCard from '@/components/Card/BasicCard';
 
 interface RecordType {
   key: string;
@@ -55,7 +55,7 @@ function Page() {
   const { pathname, search } = useLocation();
   const uri = pathname + search;
   const id = getUrlParam(search, 'id');
-  const createFormRef = useRef<FormFn>(null);
+  const createFormRef = useRef<FormInstance>(null);
   const dispatch: AppDispatch = useDispatch();
   const [isLoading, setLoading] = useState(false);
   const [createId, setCreateId] = useState('');
@@ -63,7 +63,7 @@ function Page() {
   const [messageApi, contextHolder] = message.useMessage();
   const { permissions } = useCommonStore();
   useSingleTab(fatherPath);
-  
+
   // 权限前缀
   const permissionPrefix = '/content/article';
 
@@ -102,7 +102,7 @@ function Page() {
 
   /** 表格提交 */
   const handleSubmit = () => {
-    createFormRef.current?.handleSubmit();
+    createFormRef.current?.submit();
   };
 
   /**
@@ -110,7 +110,7 @@ function Page() {
    * @param isRefresh - 返回页面是否重新加载接口
    */
   const goBack = (isRefresh?: boolean) => {
-    createFormRef.current?.handleReset();
+    createFormRef.current?.resetFields();
     if (isRefresh) dispatch(setRefreshPage(true));
     dispatch(closeTabGoNext({
       key: uri,
@@ -129,7 +129,7 @@ function Page() {
       const { code, message } = await functions();
       if (Number(code) !== 200) return;
       messageApi.success(message || t('public.successfulOperation'));
-      createFormRef.current?.handleReset();
+      createFormRef.current?.resetFields();
       goBack(true);
     } finally {
       setLoading(false);
@@ -138,12 +138,12 @@ function Page() {
 
   return (
     <BasicContent isPermission={id ? pagePermission.update : pagePermission.create}>
-      <>
-        { contextHolder }
+      { contextHolder }
+      <BasicCard>
         <div className='mb-50px'>
           <Spin spinning={isLoading}>
             <BasicForm
-              formRef={createFormRef}
+              ref={createFormRef}
               list={createList(t)}
               data={createData}
               labelCol={{ span: 5 }}
@@ -151,13 +151,13 @@ function Page() {
             />
           </Spin>
         </div>
+      </BasicCard>
 
-        <SubmitBottom
-          isLoading={isLoading}
-          goBack={() => goBack()}
-          handleSubmit={handleSubmit}
-        />
-      </>
+      <SubmitBottom
+        isLoading={isLoading}
+        goBack={() => goBack()}
+        handleSubmit={handleSubmit}
+      />
     </BasicContent>
   );
 }

@@ -1,16 +1,15 @@
-import type { AppDispatch, RootState } from '@/stores';
+import type { AppDispatch } from '@/stores';
 import { useToken } from '@/hooks/useToken';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useOutlet } from 'react-router-dom';
 import { Skeleton, message } from 'antd';
 import { Icon } from '@iconify/react';
 import { useDebounceFn } from 'ahooks';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { versionCheck } from './utils/helper';
-import { useCommonStore } from '@/hooks/useCommonStore';
 import { getPermissions } from '@/servers/permissions';
-import { permissionsToArray } from '@/utils/permissions';
+import { useCommonStore } from '@/hooks/useCommonStore';
 import { setPermissions, setUserInfo } from '@/stores/user';
 import { setMenuList, toggleCollapsed, togglePhone } from '@/stores/menu';
 import { getMenuList } from '@/servers/system/menu';
@@ -31,7 +30,6 @@ function Layout() {
   const outlet = useOutlet();
   const [isLoading, setLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
-  const version = useSelector((state: RootState) => state.public.version);
 
   const {
     permissions,
@@ -49,9 +47,8 @@ function Layout() {
       const { code, data } = await getPermissions({ refresh_cache: false });
       if (Number(code) !== 200) return;
       const { user, permissions } = data;
-      const newPermissions = permissionsToArray(permissions);
       dispatch(setUserInfo(user));
-      dispatch(setPermissions(newPermissions));
+      dispatch(setPermissions(permissions));
     } catch(err) {
       console.error('获取用户数据失败:', err);
       setPermissions([]);
@@ -89,7 +86,7 @@ function Layout() {
   
   // 监测是否需要刷新
   useEffect(() => {
-    versionCheck(version, dispatch, messageApi);
+    versionCheck(messageApi);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 

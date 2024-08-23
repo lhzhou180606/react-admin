@@ -1,13 +1,12 @@
 import type { FormData } from '#/form';
-import type { PagePermission, TableOptions } from '#/public';
-import type { FormFn } from '@/components/Form/BasicForm';
+import type { PagePermission } from '#/public';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchList, createList, tableColumns } from './model';
-import { message } from 'antd';
+import { type FormInstance, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { checkPermission } from '@/utils/permissions';
 import { useCommonStore } from '@/hooks/useCommonStore';
-import { ADD_TITLE, EDIT_TITLE } from '@/utils/config';
+import { ADD_TITLE, EDIT_TITLE, INIT_PAGINATION } from '@/utils/config';
 import { UpdateBtn, DeleteBtn } from '@/components/Buttons';
 import {
   getMenuPage,
@@ -22,17 +21,12 @@ import BasicModal from '@/components/Modal/BasicModal';
 import BasicForm from '@/components/Form/BasicForm';
 import BasicTable from '@/components/Table/BasicTable';
 import BasicPagination from '@/components/Pagination/BasicPagination';
+import BasicCard from '@/components/Card/BasicCard';
 
 // 当前行数据
 interface RowData {
   id: string;
 }
-
-// 初始化搜索数据
-const initSearch = {
-  page: 1,
-  pageSize: 20
-};
 
 // 初始化新增数据
 const initCreate = {
@@ -41,16 +35,18 @@ const initCreate = {
 
 function Page() {
   const { t } = useTranslation();
-  const searchFormRef = useRef<FormFn>(null);
-  const createFormRef = useRef<FormFn>(null);
+  const createFormRef = useRef<FormInstance>(null);
+  const columns = tableColumns(t, optionRender);
+  const [isFetch, setFetch] = useState(false);
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isLoading, setLoading] = useState(false);
   const [isCreateLoading, setCreateLoading] = useState(false);
   const [createTitle, setCreateTitle] = useState(ADD_TITLE(t));
   const [createId, setCreateId] = useState('');
   const [createData, setCreateData] = useState<FormData>(initCreate);
-  const [page, setPage] = useState(initSearch.page);
-  const [pageSize, setPageSize] = useState(initSearch.pageSize);
+  const [searchData, setSearchData] = useState<FormData>({});
+  const [page, setPage] = useState(INIT_PAGINATION.page);
+  const [pageSize, setPageSize] = useState(INIT_PAGINATION.pageSize);
   const [total, setTotal] = useState(0);
   const [tableData, setTableData] = useState<FormData[]>([]);
   const [messageApi, contextHolder] = message.useMessage();
@@ -67,39 +63,44 @@ function Page() {
     delete: checkPermission(`${permissionPrefix}/delete`, permissions)
   };
 
-  /**
-   * 点击搜索
-   * @param values - 表单返回数据
-   */
-  const onSearch = (values: FormData) => {
-    setPage(1);
-    handleSearch({ page: 1, pageSize, ...values });
-  };
+  /** 获取表格数据 */
+  const getPage = useCallback(async () => {
+    const params = { ...searchData, page, pageSize };
 
-  /**
-   * 处理搜索
-   * @param values - 表单返回数据
-   */
-  const handleSearch = useCallback(async (values: FormData) => {
     try {
       setLoading(true);
-      const res = await getMenuPage(values);
+      const res = await getMenuPage(params);
       const { code, data } = res;
       if (Number(code) !== 200) return;
       const { items, total } = data;
       setTotal(total);
       setTableData(items);
     } finally {
+      setFetch(false);
       setLoading(false);
     }
-  }, []);
+  }, [page, pageSize, searchData]);
+
+  useEffect(() => {
+    if (isFetch) getPage();
+  }, [getPage, isFetch]);
+
+  /**
+   * 点击搜索
+   * @param values - 表单返回数据
+   */
+  const onSearch = (values: FormData) => {
+    setPage(1);
+    setSearchData(values);
+    setFetch(true);
+  };
 
   // 首次进入自动加载接口数据
-  useEffect(() => { 
-    if (pagePermission.page) handleSearch({ ...initSearch });
+  useEffect(() => {
+    if (pagePermission.page) getPage();
     // TODO: 重复请求测试，可删
-    if (pagePermission.page) handleSearch({ ...initSearch });
-  }, [handleSearch, pagePermission.page]);
+    if (pagePermission.page) getPage();
+  }, [getPage, pagePermission.page]);
 
   /** 点击新增 */
   const onCreate = () => {
@@ -129,19 +130,12 @@ function Page() {
 
   /** 表单提交 */
   const createSubmit = () => {
-    createFormRef.current?.handleSubmit();
+    createFormRef?.current?.submit();
   };
 
   /** 关闭新增/修改弹窗 */
   const closeCreate = () => {
     setCreateOpen(false);
-  };
-
-  /** 获取表格数据 */
-  const getPage = () => {
-    const formData = searchFormRef.current?.getFieldsValue() || {};
-    const params = { ...formData, page, pageSize };
-    handleSearch(params);
   };
 
   /**
@@ -187,17 +181,16 @@ function Page() {
   const onChangePagination = useCallback((page: number, pageSize: number) => {
     setPage(page);
     setPageSize(pageSize);
-    const formData = searchFormRef.current?.getFieldsValue();
-    handleSearch({ ...formData, page, pageSize });
-  }, [handleSearch]);
+    setFetch(true);
+  }, []);
 
   /**
    * 渲染操作
    * @param _ - 当前值
    * @param record - 当前行参数
    */
-  const optionRender: TableOptions<object> = (_, record) => (
-    <>
+  function optionRender(_: unknown, record: object) {
+    return <>
       {
         pagePermission.update === true &&
         <UpdateBtn
@@ -214,27 +207,29 @@ function Page() {
           handleDelete={() => onDelete((record as RowData).id)}
         />
       }
-    </>
-  );
+    </>;
+  }
 
   return (
     <BasicContent isPermission={pagePermission.page}>
-      <>
-        { contextHolder }
+      { contextHolder }
+      <BasicCard>
         <BasicSearch
-          formRef={searchFormRef}
           list={searchList(t)}
-          data={initSearch}
+          data={searchData}
           isLoading={isLoading}
-          isCreate={pagePermission.create}
-          onCreate={onCreate}
           handleFinish={onSearch}
         />
-        
+      </BasicCard>
+
+      <BasicCard className='mt-10px'>
         <BasicTable
-          loading={isLoading}
-          columns={tableColumns(t, optionRender)}
+          isLoading={isLoading}
+          isCreate={pagePermission.create}
+          columns={columns}
           dataSource={tableData}
+          getPage={getPage}
+          onCreate={onCreate}
         />
 
         <BasicPagination
@@ -244,25 +239,25 @@ function Page() {
           total={total}
           onChange={onChangePagination}
         />
+      </BasicCard>
 
-        <BasicModal
-          width={600}
-          title={createTitle}
-          open={isCreateOpen}
-          confirmLoading={isCreateLoading}
-          onOk={createSubmit}
-          onCancel={closeCreate}
-        >
-          <BasicForm
-            formRef={createFormRef}
-            list={createList(t, createId)}
-            data={createData}
-            labelCol={{ span: 4 }}
-            wrapperCol={{ span: 19 }}
-            handleFinish={handleCreate}
-          />
-        </BasicModal>
-      </>
+      <BasicModal
+        width={600}
+        title={createTitle}
+        open={isCreateOpen}
+        confirmLoading={isCreateLoading}
+        onOk={createSubmit}
+        onCancel={closeCreate}
+      >
+        <BasicForm
+          ref={createFormRef}
+          list={createList(t, createId)}
+          data={createData}
+          labelCol={{ span: 4 }}
+          wrapperCol={{ span: 19 }}
+          handleFinish={handleCreate}
+        />
+      </BasicModal>
     </BasicContent>
   );
 }

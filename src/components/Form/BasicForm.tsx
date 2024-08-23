@@ -1,74 +1,45 @@
-import type { ReactNode, Ref } from 'react';
+import type { LegacyRef, ReactNode } from 'react';
 import type { FormData, FormList } from '#/form';
-import type { ColProps, FormItemProps } from 'antd';
-import { useEffect, useImperativeHandle } from 'react';
+import type { ColProps, FormInstance } from 'antd';
+import { forwardRef, useEffect } from 'react';
 import { FormProps } from 'antd';
 import { Form } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { getComponent } from '../Form/utils/componentMap';
-import { handleValuePropName } from './utils/helper';
+import { filterFormItem, handleValuePropName } from './utils/helper';
 import { filterDayjs } from '../Dates/utils/helper';
 
-export interface FormFn {
-  getFieldValue: (key: string) => unknown;
-  getFieldsValue: () => FormData;
-  handleReset: () => void;
-  handleSubmit: () => void;
-}
-
-interface Props {
+interface Props extends FormProps {
   list: FormList[];
   data: FormData;
   children?: ReactNode;
   labelCol?: Partial<ColProps>;
   wrapperCol?: Partial<ColProps>;
-  formRef?: Ref<FormFn>;
   handleFinish: FormProps['onFinish'];
 }
 
-function BasicForm(props: Props) {
+const BasicForm = forwardRef((props: Props, ref: LegacyRef<FormInstance>) => {
   const {
     list,
     data,
     children,
     labelCol,
     wrapperCol,
-    formRef,
     handleFinish
   } = props;
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
-  // 抛出外部方法
-  useImperativeHandle(
-    formRef,
-    () => ({
-      /**
-       * 获取表单值
-       * @param key - 表单唯一值
-       */
-      getFieldValue: (key: string) => {
-        return form.getFieldValue(key) || {};
-      },
-      /** 获取表单全部值 */
-      getFieldsValue: () => {
-        return form.getFieldsValue() || {};
-      },
-      /** 重置表单 */
-      handleReset: () => {
-        form.resetFields();
-      },
-      /** 提交表单  */
-      handleSubmit: () => {
-        form.submit();
-      }
-    } as FormFn)
-  );
+  // 清除多余参数
+  const formProps: Partial<Props> = { ...props };
+  delete formProps.list;
+  delete formProps.data;
+  delete formProps.handleFinish;
 
   // 监听传入表单数据，如果变化则替换表单
   useEffect(() => {
-    form.resetFields();
-    form.setFieldsValue(props.data);
+    form?.resetFields();
+    form?.setFieldsValue(props.data);
   }, [form, props.data]);
 
   const validateMessages = {
@@ -82,6 +53,11 @@ function BasicForm(props: Props) {
     },
   };
 
+  /** 回车处理 */
+  const onPressEnter = () => {
+    form?.submit();
+  };
+
   /**
    * 提交表单
    * @param values - 表单值
@@ -93,7 +69,7 @@ function BasicForm(props: Props) {
       handleFinish?.(params);
     }
   };
-  
+
   /**
    * 表单提交失败处理
    * @param errorInfo - 错误信息
@@ -105,6 +81,8 @@ function BasicForm(props: Props) {
   return (
     <div>
       <Form
+        {...formProps}
+        ref={ref}
         form={form}
         labelCol={labelCol ? labelCol : { span: 6 }}
         wrapperCol={wrapperCol ? wrapperCol : { span: 15 }}
@@ -117,7 +95,7 @@ function BasicForm(props: Props) {
         {
           list?.map(item => (
             <Form.Item
-              {...item as FormItemProps}
+              {...filterFormItem(item)}
               key={`${item.name}`}
               label={item.label}
               name={item.name}
@@ -125,7 +103,7 @@ function BasicForm(props: Props) {
               className={item.hidden ? '!hidden' : ''}
               valuePropName={handleValuePropName(item.component)}
             >
-              { getComponent(t, item) }
+              { getComponent(t, item, onPressEnter) }
             </Form.Item>
           ))
         }
@@ -134,6 +112,6 @@ function BasicForm(props: Props) {
       </Form>
     </div>
   );
-}
+});
 
 export default BasicForm;

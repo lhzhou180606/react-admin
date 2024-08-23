@@ -14,7 +14,7 @@ import type {
   TransferProps,
   FormItemProps,
 } from "antd";
-import type { Key, ReactNode } from "react";
+import type { FC, Key, ReactNode } from "react";
 import type { RangePickerProps } from 'antd/lib/date-picker';
 import type { DefaultOptionType } from 'antd/lib/select';
 import type { RuleObject } from 'antd/lib/form';
@@ -88,12 +88,15 @@ export interface ApiResult extends Omit<DefaultOptionType, 'value'> {
   value?: string | number;
 }
 
-export type ApiFn = (params?: object) => Promise<ServerResult<unknown>>
+export type ApiFn = (params?: object, params2?: object, params3?: object) => Promise<ServerResult<unknown>>
 
 // api参数
 interface ApiParam {
   api?: ApiFn;
   params?: object;
+  params2?: object;
+  params3?: object;
+  apiResultKey?: string;
 }
 
 // ApiSelect
@@ -127,7 +130,7 @@ export type FormRule = RuleObject & {
 }
 
 // 表单数据
-export interface FormList extends FormItemProps {
+export interface FormList extends Omit<FormItemProps, 'labelCol' | 'wrapperCol'> {
   name: string | string[]; // 表单域字段
   label: string; // 标签
   placeholder?: string; // 占位符
@@ -138,5 +141,10 @@ export interface FormList extends FormItemProps {
   wrapperCol?: number; // 内容宽度
   component: ComponentType; // 组件
   componentProps?: ComponentProps; // 组件参数
-  render?: ReactElement; // 自定义渲染
+  render?: FC; // 自定义渲染
+}
+
+// 搜索数据
+export interface SearchList extends FormList {
+  // TODO...
 }
